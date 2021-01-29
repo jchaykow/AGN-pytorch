@@ -112,6 +112,39 @@ with open('bboxes_fnames_test.csv', 'w') as f:
     writer.writerows(zip(a))
 ```
 
+## Directory structure
+
+```
+project
+│   README.md
+│   AGN.ipynb  
+│
+└───data
+│   │   files_sample.csv
+│   └───eyeglasses
+│   │
+│   └───test_me
+│       └───train
+|           └───Adrien_Brody
+|           ...
+|           └───Michael_Chaykowsky
+|           ...
+|           └───Venus_Williams
+│       └───val
+|           └───Adrien_Brody
+|           ...
+|           └───Michael_Chaykowsky
+|           ...
+|           └───Venus_Williams
+│   
+└───models
+│   │   inception_resnet_v1.py
+│   │   mtcnn.py
+│   └───utils
+```
+
+## Refrences
+
 @article{Sharif_2019,
    title={A General Framework for Adversarial Examples with Objectives},
    volume={22},
