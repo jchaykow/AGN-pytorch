@@ -2,6 +2,12 @@
 
 Please see the [paper by Sharif et al.](https://arxiv.org/pdf/1801.00349.pdf) for more information.
 
+## Testing your adversarial generator with your webcam
+
+File `video_inference_cv.py` presents a method to test out your adversarial generator (alongside a simple facial recognition classifier) using your webcam.
+
+![testing adversarial generator on webcam](https://github.com/jchaykow/AGN-pytorch/images/webcam_test.png)
+
 ## For video pre-processing steps
 
 1. 
