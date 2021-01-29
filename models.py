@@ -60,6 +60,23 @@ class Discriminator(nn.Module):
         return self.main(input)
 
 
+def CWLoss(logits, target, b_size, is_targeted, num_classes=None, kappa=0):
+    # inputs to the softmax function are called logits.
+    # https://arxiv.org/pdf/1608.04644.pdf
+    #set_trace()
+    target_one_hot = torch.eye(num_classes).type(logits.type())[target.long()]
+    logits = torch.log(logits / (1 - logits))
+    #logits = torch.log(logits)
+    # https://github.com/carlini/nn_robust_attacks/blob/master/l2_attack.py
+    real = torch.sum(target_one_hot*logits, 1)
+    other = torch.max((1-target_one_hot)*logits - (target_one_hot*10000), 1)[0]
+    kappa = torch.zeros_like(other).fill_(kappa)
+    
+    if is_targeted:
+        return torch.sum(torch.max(other-real, kappa))
+    return torch.sum(real-other)
+
+
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv') != -1:

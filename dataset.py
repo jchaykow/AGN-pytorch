@@ -60,3 +60,41 @@ class EyeglassesDataset(Dataset):
 
         return sample
 
+
+class MeDataset(Dataset):
+    """Me dataset."""
+
+    def __init__(self, csv_file, root_dir, bs, transform_img=None, transform_land=None):
+        """
+        Args:
+            csv_file (string): Path to the csv file with labels.
+            root_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.label = pd.read_csv(csv_file)
+        self.root_dir = root_dir
+        self.transform_img = transform_img
+        self.transform_land = transform_land
+        self.bs = bs
+
+    def __len__(self):
+        return len(self.label)
+
+    def __getitem__(self, idx):
+        img_name = os.path.join(self.root_dir,
+                                self.label.iloc[idx, 0])
+        image = io.imread(img_name)
+        landmarks = self.label.iloc[idx, 1:]
+        landmarks = np.array([landmarks])
+        landmarks = landmarks.astype('float').reshape(-1, 2)
+        sample = {'image': image, 'landmarks': landmarks, 'label': np.zeros(self.bs).astype('uint8').reshape(-1, 1)}
+
+        if self.transform_img:
+            sample['image'] = self.transform_img(sample['image'])
+            
+        if self.transform_land:
+            sample['landmarks'] = self.transform_land(sample['landmarks'])
+            sample['label'] = self.transform_land(sample['label'])
+
+        return sample['image'], sample['landmarks'].reshape(-1), sample['label'].reshape(-1).view(-1)

@@ -1,5 +1,8 @@
 from imports import *
 from pretrain_gans import *
+from vid_processing import *
+from dataset import *
+from train import *
 from models.inception_resnet_v1 import InceptionResnetV1
 
 def run_AGN(last_layers:bool=False):
@@ -97,3 +100,59 @@ def run_AGN(last_layers:bool=False):
 
     model_ft, FT_losses = train_ft_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=500)
     torch.save({'state_dict': model_ft.state_dict()}, f'model_ft_loss{FT_losses[-1]}_{dt.datetime.today().strftime('%Y%m%d')}.pth.tar')
+
+    # pre-process video data
+    coords = vid_preprocess()
+    # Custom dataset for images of my face to affix glasses
+    t_img = transforms.Compose([transforms.ToTensor()])
+    t_land = transforms.Compose([transforms.ToTensor()])
+    data_dir = 'data/me160'
+    image_datasets = MeDataset('data/bboxes_fnames.csv','data/agn_me_extras160/Michael_Chaykowsky', 
+                            bs = 1, transform_img=t_img, transform_land=t_land)
+    dataloader_me = torch.utils.data.DataLoader(image_datasets, batch_size=1, shuffle=False)
+
+    # AGN training #
+    ## Load dataset of my faces for building adversarial examples during training
+    t_img = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1),
+        # transforms.RandomHorizontalFlip(),
+        # transforms.RandomRotation(5),
+        transforms.ToTensor(),
+        transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+    ])
+
+    t_landmarks = transforms.Compose([
+        transforms.ToTensor()
+    ])
+
+    data_dir = 'data/agn_me'
+    image_datasets_me = MeDataset(
+        'data/bboxes_fnames.csv', 
+        'data/agn_me_extras160/Michael_Chaykowsky', 
+        bs=1, 
+        transform_img=t_img, 
+        transform_land=t_landmarks)
+
+    dataloader_me = torch.utils.data.DataLoader(image_datasets_me, batch_size=64, shuffle=True)
+
+    # Full training of AGN
+    netG, img_list, G_losses, D_losses, d1s, d3s, num_fooled = train_AGN(
+        netG, netD, model_ft, dataloader, 
+        dataloader_me, orig_mask_inv_g, 
+        class_names, num_epochs=1)
+
+    torch.save({'state_dict': netG.state_dict()}, f'adv_G_loss{G_losses[-1]}_{dt.datetime.today().strftime('%Y%m%d')}.pth.tar')
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--last_layers',
+        type=bool,
+        default=False,
+        help='Path to model file')
+    args = parser.parse_args()
+
+    last_layers = args.last_layers
+    run_AGN(last_layers)
