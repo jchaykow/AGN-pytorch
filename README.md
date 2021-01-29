@@ -112,3 +112,27 @@ with open('bboxes_fnames_test.csv', 'w') as f:
     writer.writerows(zip(a))
 ```
 
+@article{Sharif_2019,
+   title={A General Framework for Adversarial Examples with Objectives},
+   volume={22},
+   ISSN={2471-2574},
+   url={http://dx.doi.org/10.1145/3317611},
+   DOI={10.1145/3317611},
+   number={3},
+   journal={ACM Transactions on Privacy and Security},
+   publisher={Association for Computing Machinery (ACM)},
+   author={Sharif, Mahmood and Bhagavatula, Sruti and Bauer, Lujo and Reiter, Michael K.},
+   year={2019},
+   month={Jul},
+   pages={1–30}
+}
+
+@misc{cao2018vggface2,
+      title={VGGFace2: A dataset for recognising faces across pose and age}, 
+      author={Qiong Cao and Li Shen and Weidi Xie and Omkar M. Parkhi and Andrew Zisserman},
+      year={2018},
+      eprint={1710.08092},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
+
