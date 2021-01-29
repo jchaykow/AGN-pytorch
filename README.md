@@ -17,11 +17,11 @@ to generate eyeglass frames that make a facial recognition classifier think you 
 
 ### Tools
 
-1 GAN
-1 classifier
-1 big dataset of eyeglass frames 
-some images of celebrity faces 
-some images of my face
+- 1 GAN
+- 1 classifier
+- 1 big dataset of eyeglass frames 
+- some images of celebrity faces 
+- some images of my face
 
 ### Algorithm
 
@@ -48,6 +48,19 @@ Please see paper for more info, but here is my brief overview of the Algorithm 1
 ![color variation](https://github.com/jchaykow/AGN-pytorch/blob/master/images/color_variation.png)
 
 ![lighting variation](https://github.com/jchaykow/AGN-pytorch/blob/master/images/lighting_variation.png)
+
+## Prepare Data for AGN Training
+
+![resize and align from iPhone video](https://github.com/jchaykow/AGN-pytorch/blob/master/images/resize_and_align.png)
+
+![transforms applied to images](https://github.com/jchaykow/AGN-pytorch/blob/master/images/transforms.png)
+
+![facial landmark analysis for placing glasses](https://github.com/jchaykow/AGN-pytorch/blob/master/images/facial_landmark_analysis.png)
+
+## AGN Training
+
+![two updates to generator](https://github.com/jchaykow/AGN-pytorch/blob/master/images/two_updates.png)
+
 
 ## For video pre-processing steps
 
