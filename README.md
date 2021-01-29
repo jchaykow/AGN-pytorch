@@ -8,6 +8,47 @@ File `video_inference_cv.py` presents a method to test out your adversarial gene
 
 ![testing adversarial generator on webcam](https://github.com/jchaykow/AGN-pytorch/blob/master/images/webcam_test.png)
 
+
+## Overview of Methods
+
+### Goal
+
+to generate eyeglass frames that make a facial recognition classifier think you are someone else
+
+### Tools
+
+1 GAN
+1 classifier
+1 big dataset of eyeglass frames 
+some images of celebrity faces 
+some images of my face
+
+### Algorithm
+
+Please see paper for more info, but here is my brief overview of the Algorithm 1 from the paper:
+
+![intrepreting the algorithm](https://github.com/jchaykow/AGN-pytorch/blob/master/images/agn_algorithm_translate.png)
+
+### Finetuning the Facial Recognition Network
+
+![overview](https://github.com/jchaykow/AGN-pytorch/blob/master/images/finetune_face_classifier_overview.png)
+
+![overview](https://github.com/jchaykow/AGN-pytorch/blob/master/images/finetuning_loss.png)
+
+### Pre-train GAN
+
+![overview](https://github.com/jchaykow/AGN-pytorch/blob/master/images/gan_overview.png)
+
+![static](https://github.com/jchaykow/AGN-pytorch/blob/master/images/static.png)
+
+![shape](https://github.com/jchaykow/AGN-pytorch/blob/master/images/shape.png)
+
+![background](https://github.com/jchaykow/AGN-pytorch/blob/master/images/background.png)
+
+![color variation](https://github.com/jchaykow/AGN-pytorch/blob/master/images/color_variation.png)
+
+![lighting variation](https://github.com/jchaykow/AGN-pytorch/blob/master/images/lighting_variation.png)
+
 ## For video pre-processing steps
 
 1. 
