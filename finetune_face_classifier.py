@@ -1,6 +1,7 @@
 from imports import *
 
-def train_ft_model(model, criterion, optimizer, scheduler, num_epochs=25):
+def train_ft_model(model, dataloaders, dataset_sizes, criterion, optimizer, scheduler, num_epochs=25):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     since = time.time()
     FT_losses = []
 

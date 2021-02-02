@@ -143,6 +143,10 @@ project
 │   └───utils
 ```
 
+## Run example
+
+`$ python main.py --last_layers n --ngpu 0 --testing y --write_vid n`
+
 ## Refrences
 
 @article{Sharif_2019,

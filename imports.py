@@ -12,6 +12,7 @@ from pdb import set_trace
 import time
 import copy
 import datetime as dt
+import argparse
 
 from pathlib import Path
 import os
@@ -23,8 +24,6 @@ from tqdm import trange, tqdm
 import csv
 import glob
 import dlib
-
-plt.ion()   # interactive mode
 
 import pandas as pd
 import numpy as np
@@ -260,6 +259,11 @@ def visualize_model(model, num_images=6):
                     model.train(mode=was_training)
                     return
         model.train(mode=was_training)
+
+
+def unorm_glasses(fake):
+    return (fake - fake.min())/(fake.max() - fake.min())
+
 
 def init_GAN():
     """Function used during presentation to initialize GAN and classifier quickly."""

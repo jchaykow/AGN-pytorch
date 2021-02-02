@@ -1,7 +1,15 @@
 from imports import *
-from models import *
+from archs import *
 
-def pretrain_gan(dataloader):
+def pretrain_gan(netD, netG, dataloader, criterion, fixed_noise, nz, testing='n'):
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # Establish convention for real and fake labels during training
+    real_label = 1
+    fake_label = 0
+    beta1 = 0.5
+    # Setup Adam optimizers for both G and D
+    optimizerD = optim.Adam(netD.parameters(), lr=1e-5, betas=(beta1, 0.999))
+    optimizerG = optim.Adam(netG.parameters(), lr=1e-5, betas=(beta1, 0.999))
     # Lists to keep track of progress
     img_list = []
     G_losses = []
@@ -14,9 +22,7 @@ def pretrain_gan(dataloader):
     for epoch in range(num_epochs):
         # For each batch in the dataloader
         for i, data in enumerate(dataloader, 0):
-            ############################
             # (1) Update D network: maximize log(D(x)) + log(1 - D(G(z)))
-            ###########################
             ## Train with all-real batch
             netD.zero_grad()
             # Format batch
@@ -49,9 +55,7 @@ def pretrain_gan(dataloader):
             # Update D
             optimizerD.step()
 
-            ############################
             # (2) Update G network: maximize log(D(G(z)))
-            ###########################
             netG.zero_grad()
             label.fill_(real_label)  # fake labels are real for generator cost
             # Since we just updated D, perform another forward pass of all-fake batch through D
@@ -81,6 +85,9 @@ def pretrain_gan(dataloader):
                 img_list.append(utils.make_grid(fake, padding=2, normalize=True))
 
             iters += 1
+
+            if testing == 'y':
+                return img_list, G_losses, D_losses, netG, netD
     
     return img_list, G_losses, D_losses, netG, netD
 

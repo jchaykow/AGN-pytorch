@@ -3,17 +3,18 @@ from pretrain_gans import *
 from vid_processing import *
 from dataset import *
 from train import *
+from archs import *
+from finetune_face_classifier import *
 from models.inception_resnet_v1 import InceptionResnetV1
 
-device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
-
-def run_AGN(last_layers:bool=False):
+def run_AGN(last_layers:str='n', ngpu:int=0, testing:str='n', write_vid:str='y'):
     """
     Function to run full AGN training from scratch.
         1. Train GAN to produce realistic eyeglass frames
         2. Finetune facial recognition classifier on images of my face
         3. Adversarially train generator to produce eyeglasses that trick the classifier
     """
+    device = torch.device("cuda:0" if (torch.cuda.is_available() and ngpu > 0) else "cpu")
     # Initialize dataset of eyeglasses
     tensor_dataset = EyeglassesDataset(
         csv_file='data/files_sample.csv',
@@ -25,10 +26,10 @@ def run_AGN(last_layers:bool=False):
             Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
             ]))
     # Initialize D & G
-    bs,nz = 64,100
-    nc = 3; ndf = 160; ngf = 160
-    netD = Discriminator(ngpu).to(device)
-    netG = Generator(ngpu).to(device)
+    bs = 64
+    nc, ndf, ngf, nz = 3, 160, 160, 100
+    netD = Discriminator(ngpu, nc, ndf, ngf, nz).to(device)
+    netG = Generator(ngpu, nc, ndf, ngf, nz).to(device)
     # Apply weights
     netD.apply(weights_init)
     netG.apply(weights_init)
@@ -36,17 +37,10 @@ def run_AGN(last_layers:bool=False):
     criterion = nn.BCEWithLogitsLoss() 
     # Create batch of latent vectors that we will use to visualize the progression of the generator
     fixed_noise = torch.randn(64, nz, 1, 1, device=device)
-    # Establish convention for real and fake labels during training
-    real_label = 1
-    fake_label = 0
-    beta1 = 0.5
-    # Setup Adam optimizers for both G and D
-    optimizerD = optim.Adam(netD.parameters(), lr=1e-5, betas=(beta1, 0.999))
-    optimizerG = optim.Adam(netG.parameters(), lr=1e-5, betas=(beta1, 0.999))
     # Build dataloader of eyeglass frames
     eye_dl = DataLoader(tensor_dataset, batch_size=64, shuffle=True)
     # Pre-train the GAN on the eyeglasses
-    img_list, G_losses, D_losses, netG, netD = pretrain_gan(dataloader=eye_dl)
+    img_list, G_losses, D_losses, netG, netD = pretrain_gan(netD, netG, eye_dl, criterion, fixed_noise, nz, testing=testing)
     # Data augmentation and normalization for training - Just normalization for validation
     data_transforms = {
         'train': transforms.Compose([
@@ -72,7 +66,7 @@ def run_AGN(last_layers:bool=False):
     layer_list = list(model_ft.children())[-5:] # all final layers
     # All beginning layers
     model_ft = nn.Sequential(*list(model_ft.children())[:-5])
-    if last_layers:
+    if last_layers == 'y':
         for param in model_ft.parameters():
             param.requires_grad = False
     # Re-initialize layers to set requires_grad to True
@@ -93,13 +87,24 @@ def run_AGN(last_layers:bool=False):
     # Decay LR by a factor of *gamma* every *step_size* epochs
     exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
     # Finetune the facial recognition classifier
-    model_ft, FT_losses = train_ft_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=500)
+    model_ft, FT_losses = train_ft_model(model_ft, dataloaders, dataset_sizes, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=1)
     # Save the model
-    torch.save({'state_dict': model_ft.state_dict()}, f'model_ft_loss{FT_losses[-1]}_{dt.datetime.today().strftime('%Y%m%d')}.pth.tar')
-    # Pre-process video data of my face to get images to adversarially train the generator
-    coords = vid_preprocess()
+    torch.save({'state_dict': model_ft.state_dict()}, f"tmp/model_ft_loss{FT_losses[-1]}_{dt.datetime.today().strftime('%Y%m%d')}.pth.tar")
 
     ### AGN training ###
+
+    # If you have not already saved the frames of the video of you can do that here
+    ### Perform data pre-processing step on frames from video described in readme using command line after this step ###
+    if write_vid == 'y':
+        vidcap = cv2.VideoCapture('data/IMG_2411.MOV')
+        success,image = vidcap.read()
+        count = 0
+        success = True
+        while success:
+            cv2.imwrite(f"data/agn_me_extras160/Michael_Chaykowsky/Michael_Chaykowsky_{format(count, '04d')}.png", image)
+            success,image = vidcap.read()
+            print('Read a new frame: ', success)
+            count += 1
 
     # Transforms for the images and the coordinates (where eyeglasses go) seperately
     t_img = transforms.Compose([
@@ -114,7 +119,6 @@ def run_AGN(last_layers:bool=False):
         transforms.ToTensor()
     ])
     # Custom dataset for images of my face to affix glasses
-    data_dir = 'data/agn_me'
     image_datasets_me = MeDataset(
         'data/bboxes_fnames.csv', 
         'data/agn_me_extras160/Michael_Chaykowsky', 
@@ -123,23 +127,38 @@ def run_AGN(last_layers:bool=False):
         transform_land=t_landmarks)
     # Build dataloader for face images
     dataloader_me = torch.utils.data.DataLoader(image_datasets_me, batch_size=64, shuffle=True)
+    # Pre-process video data of my face to get images to adversarially train the generator
+    coords = vid_preprocess()
     # Full training of AGN
     netG, img_list, G_losses, D_losses, d1s, d3s, num_fooled = train_AGN(
-        netG, netD, model_ft, dataloader, 
-        dataloader_me, orig_mask_inv_g, 
-        class_names, num_epochs=1)
+        netG, netD, model_ft, eye_dl, 
+        dataloader_me, class_names, nz, num_epochs=1)
     # Save adversarial generator for testing later
-    torch.save({'state_dict': netG.state_dict()}, f'adv_G_loss{G_losses[-1]}_{dt.datetime.today().strftime('%Y%m%d')}.pth.tar')
+    torch.save({'state_dict': netG.state_dict()}, f"tmp/adv_G_{dt.datetime.today().strftime('%Y%m%d')}.pth.tar")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--last_layers',
-        type=bool,
-        default=False,
+        type=str,
+        default='n',
         help='Path to model file')
+    parser.add_argument(
+        '--ngpu',
+        type=int,
+        default=0,
+        help='How many GPUs do you have?')
+    parser.add_argument(
+        '--write_vid',
+        type=str,
+        default='y',
+        help='Do you want to save IMG_2411.MOV file frames as png?')
+    parser.add_argument(
+        '--testing',
+        type=str,
+        default='n',
+        help='Run all epochs?')
     args = parser.parse_args()
 
-    last_layers = args.last_layers
-    run_AGN(last_layers)
+    run_AGN(args.last_layers, args.ngpu, args.testing, args.write_vid)
