@@ -17,7 +17,7 @@ import pygame.locals
 pygame.init()
 
 from imports import *
-from models import *
+from archs import *
 
 from models.inception_resnet_v1 import InceptionResnetV1
 

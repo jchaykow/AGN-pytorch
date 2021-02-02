@@ -5,6 +5,7 @@ data/eyeglasses/*
 data/test_me/train/*
 data/test_me/val/*
 data/agn_me_extras160/Michael_Chaykowsky/*
+data/tmp/*
 tmp/*
 *.pth
 *.tar
