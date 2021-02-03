@@ -2,6 +2,8 @@
 
 Please see the [paper by Sharif et al.](https://arxiv.org/pdf/1801.00349.pdf) for more information.
 
+Also check out [my accompanying blog post.](https://jchaykow.medium.com/adversarial-eyeglasses-to-trick-facial-recognition-887c9f90930f)
+
 ## Testing your adversarial generator with your webcam
 
 File `video_inference_cv.py` presents a method to test out your adversarial generator (alongside a simple facial recognition classifier) using your webcam.
